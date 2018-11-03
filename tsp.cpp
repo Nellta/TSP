@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <math.h>
 #include <limits>
+#include <list>
 
 
 namespace TSPNAME{
@@ -25,7 +26,7 @@ namespace TSPNAME{
 		std::ifstream in(filename);
 
 		std::string size;
-		std::getline (in,size);
+		std::getline (std::cin,size);
 		int size2 = std::stoi(size);
 
 		//std::cout << size << std::endl;
@@ -38,7 +39,7 @@ namespace TSPNAME{
 			
 			std::string line;
 			
-			std::getline (in,line);
+			std::getline (std::cin,line);
 
 			std::istringstream iss(line);
 			iss >> a >> b;
@@ -81,16 +82,20 @@ namespace TSPNAME{
 
 	void primsEMST(std::vector<std::tuple<double,double>> vec){
 		std::vector<dotObj> list;
-		for(int i =1; i< vec.size(); i++){
+		for(int i =0; i< vec.size(); i++){
 			list.push_back(dotObj(0, calcDistance(vec[0], vec[i])));
 		}
+
+		//std::cout << vec.size();
+		//printDotList(list);
 
 		//std::vector<dotObj> mst;
 		//mst.push_back(vec[0]);
 		int min = std::numeric_limits<int>::max();
 		int minVertex;
-		for(int i=1; i< vec.size(); i++ ){
-			
+		for(int i=1; i< list.size(); i++ ){
+			int min = std::numeric_limits<int>::max();
+			int minVertex;
 			for(int j =0; j< list.size(); j++){
 				if(list[j].length > 0 && list[j].length < min){
 					min = list[j].length;
@@ -100,9 +105,10 @@ namespace TSPNAME{
 
 			list[minVertex].length = 0;
 			list[list[minVertex].parent].children.push_back(minVertex);
-
+			//std::cout << minVertex << std::endl;
+			//std::cout << 1111 << std::endl;
 			for(int j=0; j< list.size(); j++){
-				if(list[j].length < calcDistance(vec[j], vec[minVertex])){
+				if(list[j].length > calcDistance(vec[j], vec[minVertex])){
 					list[j].length = calcDistance(vec[j], vec[minVertex]);
 					list[j].parent = minVertex;
 
@@ -111,10 +117,48 @@ namespace TSPNAME{
 			
 		}
 
-		std::cout << 0 << std::endl;
-
-		std::cout << list[0].children[0] << std::endl;
+		//std::cout << 0 << std::endl;
+		dfs(list);
+		//std::cout << list[0].children[0] << std::endl;
+		//printer(0,list);
+		//printDotList(list);
 	}
 
+
+	void printDotList(std::vector<dotObj> list){
+		for(int i =0; i< list.size(); i++){
+			std::cout << "item: " << i << std::endl;
+			for(int j=0; j< list[i].children.size(); j++){
+				std::cout << list[i].children[j] << " ";
+			}
+
+			std::cout << std::endl;
+		}
+	}
+
+	void dfs(std::vector<dotObj> vec){
+
+		if(vec.size()<=0){
+
+		} else {
+
+			std::list<int> linklist;
+
+			linklist.push_front(0);
+
+			while(!linklist.empty()){
+				int first = linklist.front();
+				linklist.pop_front();
+
+				std::cout << first << std::endl;
+
+				for(int i=0; i< vec[first].children.size(); i++){
+					linklist.push_front(vec[first].children[i] );
+				}
+			}
+
+		}
+
+	}
 
 }
