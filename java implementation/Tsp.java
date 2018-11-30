@@ -4,6 +4,9 @@ import java.lang.Math;
 public class Tsp{
 
 	int calcDistance(Point a, Point b){
+		if( a.x == b.x && b.y == a.y){
+			return 0;
+		}
 		return (int) Math.round( Math.sqrt( Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y,2) )  );
 	}
 
@@ -137,50 +140,45 @@ public class Tsp{
 	public int[] threeOpt(ArrayList<Point> points, int[] list){
 		boolean swapped = false;
 		int best = totalDist(points, list);
+
 		while(swapped){
 			swapped = false;
 			for(int i=1; i< list.length - 3; i++){
 				for(int j=i+2; j< list.length-2; j++){
 					for(int k=j+2; k< list.length-1; k++){
 
-						int[] dists = new int[7];
-						int[][] tmps = new int[7][1];
+						int orig = calcDistance(points.get(i-1), points.get(i)) + calcDistance(points.get(j-1), points.get(j)) +
+							calcDistance(points.get(k-1), points.get(k));
 
-						tmps[0] = swap(list, i-1,j);
-						dists[0]= totalDist(points, tmps[0]);
-
-						tmps[1]= swap(list, j,k-1 );
-						dists[1] = totalDist(points, tmps[1]);
-
-						tmps[2] = swap(tmps[1], i, j-1 );
-						dists[2]= totalDist(points, tmps[2]);
-
-						tmps[3] = swap(list,  i  ,k-1);
-						dists[3] = totalDist(points, tmps[3]);
-
-						tmps[4] = swap(tmps[3]  , i , j-1 );
-						dists[4] = totalDist(points, tmps[4]);
-
-						tmps[5] = swap( tmps[3]  , j , k-1 );
-						dists[5] = totalDist(points, tmps[5]);
-
-
-						tmps[6] = swap( tmps[4]  , j , k-1 );
-						dists[6] = totalDist(points, tmps[6]);
-
-
-						int smallest = 0;
-						for(int f =1; f< dists.length; f++){
-							if( dists[smallest] > dists[i]){
-								smallest = i;
-							}
-						}
-
-
-						if(dists[smallest] < best){
-							best = dists[smallest];
+						
+						if(calcDistance(points.get(j), points.get(i-1)) + calcDistance(points.get(k), points.get(i)) +
+							calcDistance(points.get(j-1), points.get(k-1)) < orig ){
+							int[] tmp = swap(list, i-1, k );
+							int[] tmp2 = swap(tmp, j, k-1);
+							for(int l = 0; l< list.length ; l++) list[l] = tmp2[l];
 							swapped = true;
-							for(int l=0; l< list.length; l++) list[l] = tmps[smallest][i] ;
+						}
+						else if(calcDistance(points.get(i), points.get(j)) + calcDistance(points.get(k-1), points.get(i-1)) +
+							calcDistance(points.get(k), points.get(j-1)) < orig ){
+							int[] tmp = swap(list, i-1, k );
+							int[] tmp2 = swap(tmp, i, j-1);
+							for(int l = 0; l< list.length ; l++) list[l] = tmp2[l];
+							swapped = true;
+						}
+						else if(calcDistance(points.get(i-1), points.get(j-1)) + calcDistance(points.get(i), points.get(k-1)) +
+							calcDistance(points.get(j), points.get(k)) < orig ){
+							int[] tmp = swap(list, i, j-1 );
+							int[] tmp2 = swap(tmp, j, k-1);
+							for(int l = 0; l< list.length ; l++) list[l] = tmp2[l];
+							swapped = true;
+						}
+						else if(calcDistance(points.get(i), points.get(k-1)) + calcDistance(points.get(j), points.get(i-1)) +
+							calcDistance(points.get(k), points.get(j-1)) < orig ){
+							int[] tmp = swap(list, i-1, k );
+							int[] tmp2 = swap(tmp, i, j-1);
+							int[] tmp3 = swap(tmp2, j, k-1);
+							for(int l = 0; l< list.length ; l++) list[l] = tmp3[l];
+							swapped = true;
 						}
 					}
 				}
@@ -202,26 +200,71 @@ public class Tsp{
 			points.get(i).parent = 0;
 		}
 
-		ArrayList<Tuple<Point,Point>> mst = new ArrayList<Tuple<Point,Point>>();
+		if(points.size()>0) points.get(0).priority = -1;
+
+		ArrayList<List<Integer>> mst = new ArrayList<List<Integer>>();
+		for(int i=0; i< points.size(); i++) mst.add(new ArrayList<Integer>());
 
 		for(int i=1 ; i< points.size(); i++){
 			int min = Integer.MAX_VALUE;
 			int minvertex = -1;
 
 			for(int j=0; j< points.size(); j++){
-				if (points.get(i).priority >0 && points.get(i).priority < min){
-					min = points.get(i).priority;
-					minvertex = i;
+				if (points.get(j).priority >=0 && points.get(j).priority < min){
+					min = points.get(j).priority;
+					minvertex = j;
 				}
 			}
 
-			points.get(minvertex).priority = 0;
+			points.get(minvertex).priority = -1;
+			mst.get( points.get(minvertex).parent).add(minvertex);
 
-
+			for(int k=0; k< points.size(); k++){
+				if(points.get(k).priority > calcDistance(points.get(minvertex), points.get(k)) ){
+					points.get(k).priority = calcDistance(points.get(minvertex), points.get(k));
+					points.get(k).parent = minvertex;
+				}
+			}
 
 
 		}
 
+		/**
+		for(int i=0; i< mst.size(); i++){
+			for(int j=0; j < mst.get(i).size(); j++){
+				System.out.print(mst.get(i).get(j) + " ");
+			}
+			System.out.println("");
+		}*/
+
+
+		return dfs(mst);
+	}
+
+	public int[] dfs(ArrayList<List<Integer>> mst){
+
+		if(mst.size()==0) return null;
+
+		Stack<Integer> stack = new Stack<Integer>();
+		stack.push(0);
+		int[] list = new int[mst.size()];
+		int counter =0;
+
+		while(!stack.isEmpty()){
+			int index = stack.pop();
+			list[counter] = index;
+			for(int i=0; i< mst.get(index).size();i++ ){
+				stack.push(mst.get(index).get(i));
+			}
+
+			counter++;
+		}
+
+		
+		return list;
+	}
+
+	public int[] reverse(int[] list, int i, int j){
 		return null;
 	}
 
@@ -235,7 +278,9 @@ public class Tsp{
 
 		int[] newList = tsp.nnTour(points);
 
-		int[] newList2 = tsp.threeOpt(points, newList);
+		if(newList == null) System.exit(1);
+
+		int[] newList2 = tsp.threeOpt(points, tsp.twoOpt(points, newList));
 
 		if(tsp.totalDist(points, newList) > tsp.totalDist(points, newList2)){
 			for(int i=0; i< newList2.length; i++) System.out.println(newList2[i]);
