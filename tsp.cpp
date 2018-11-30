@@ -1,11 +1,11 @@
 
 #include "tsp.h"
+#include "prim.h"
 
 #include <vector>
 #include <sstream>
 #include <string>
 #include <tuple>
-#include <iostream>
 #include <fstream>
 #include <iterator>
 #include <cstdint>
@@ -15,11 +15,6 @@
 
 
 namespace TSPNAME{
-
-	dotObj::dotObj(int parent, int length){
-		this->parent = parent;
-		this->length = length;
-	}
 
 
 	std::vector<std::tuple<double,double>> createPoints(const std::string &filename){
@@ -79,49 +74,34 @@ namespace TSPNAME{
 
 	}
 
+	
 
-	void primsEMST(std::vector<std::tuple<double,double>> vec){
-		std::vector<dotObj> list;
-		for(int i =0; i< vec.size(); i++){
-			list.push_back(dotObj(0, calcDistance(vec[0], vec[i])));
-		}
 
-		//std::cout << vec.size();
-		//printDotList(list);
+	void primsEMST(std::vector<std::tuple<double,double>> vec, int minDistance){
 
-		//std::vector<dotObj> mst;
-		//mst.push_back(vec[0]);
-		int min = std::numeric_limits<int>::max();
-		int minVertex;
-		for(int i=1; i< list.size(); i++ ){
-			int min = std::numeric_limits<int>::max();
-			int minVertex;
-			for(int j =0; j< list.size(); j++){
-				if(list[j].length > 0 && list[j].length < min){
-					min = list[j].length;
-					minVertex = j;
+		PRIMNAME::Graph* graph = PRIMNAME::createGraph(vec.size());
+
+		//std::cout << minDistance << "   min:";
+
+
+		for(int i=0; i< vec.size(); i++){
+			for(int j=0; j< vec.size(); j++){
+				if(i!=j ){
+					int len = calcDistance(vec[i],vec[j]);
+					  PRIMNAME::addEdge(graph, i, j, len  );
 				}
 			}
-
-			list[minVertex].length = 0;
-			list[list[minVertex].parent].children.push_back(minVertex);
-			//std::cout << minVertex << std::endl;
-			//std::cout << 1111 << std::endl;
-			for(int j=0; j< list.size(); j++){
-				if(list[j].length > calcDistance(vec[j], vec[minVertex])){
-					list[j].length = calcDistance(vec[j], vec[minVertex]);
-					list[j].parent = minVertex;
-
-				}
-			}
-			
 		}
+		
+		int arr[graph->V];
+		PRIMNAME::primMST(graph, arr);
 
-		//std::cout << 0 << std::endl;
-		dfs(list);
-		//std::cout << list[0].children[0] << std::endl;
-		//printer(0,list);
-		//printDotList(list);
+		for(int i=0; i< graph->V; i++){
+			std::cout << arr[i] << std::endl;
+		}
+	
+
+
 	}
 
 
@@ -136,7 +116,10 @@ namespace TSPNAME{
 		}
 	}
 
+	/**
 	void dfs(std::vector<dotObj> vec){
+
+		bool visited[vec.size()] = {false}; 
 
 		if(vec.size()<=0){
 
@@ -150,15 +133,68 @@ namespace TSPNAME{
 				int first = linklist.front();
 				linklist.pop_front();
 
-				std::cout << first << std::endl;
-
-				for(int i=0; i< vec[first].children.size(); i++){
-					linklist.push_front(vec[first].children[i] );
-				}
+				if(!visited[first]){
+					visited[first] = true;
+					std::cout << first << std::endl;
+					for(int i=0; i< vec[first].children.size(); i++){
+						linklist.push_front(vec[first].children[i] );
+					}
+				}	
 			}
-
 		}
-
 	}
+	*/
+
+
+
+
+
+
+	void quickSort(std::vector<std::tuple<double,double>>* arr, int left, int right) {
+
+      int i = left, j = right;
+
+      std::tuple<double,double> tmp;
+
+
+      double pivot =  std::get<0>(arr->at((left + right) / 2));
+
+      /* partition */
+      while (i <= j) {
+
+            while (std::get<0>(arr->at(i)) < pivot)
+
+                  i++;
+
+            while (std::get<0>(arr->at(j)) > pivot)
+
+                  j--;
+
+            if (i <= j) {
+
+                  tmp = arr->at(i);
+
+                  arr->at(i) = arr->at(j);
+
+                  arr->at(j) = tmp;
+
+                  i++;
+
+                  j--;
+
+            }
+
+      };
+      /* recursion */
+
+      if (left < j)
+
+            quickSort(arr, left, j);
+
+      if (i < right)
+
+            quickSort(arr, i, right);
+    }
+
 
 }
